@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  email      String    @unique
+  password   String
+  name       String    @default("")
+  avatarPath String    @default("/defaultImg.jpg") @map("avatar_path")
+  phone      String    @default("")
+  isAdmin    Boolean   @default(false) @map("is_admin")
+  address    String    @default("")
+  orders     Order[]
+  favorites  Product[]
+  reviews    Review[]
+}
+
+model Product {
+  id          Int         @id @default(autoincrement())
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  name        String      @unique
+  slug        String      @unique
+  description String
+  price       Int
+  measure     String
+  images      String[]
+  isDiscount  Boolean     @default(false) @map("is_discount")
+  isStock     Boolean     @default(true) @map("is_stock")
+  categoryId  Int?        @map("category_id")
+  userId      Int?        @map("user_id")
+  orderItems  OrderItem[]
+  category    Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user        User?       @relation(fields: [userId], references: [id])
+  reviews     Review[]
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  name      String    @unique
+  slug      String    @unique
+  images    String    @default("")
+  products  Product[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  rating    Int
+  text      String
+  userId    Int      @map("user_id")
+  productId Int      @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Order {
+  id        Int             @id @default(autoincrement())
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  status    EnumOrderStatus @default(AWAITING_COMFIRMARION)
+  total     Int
+  userId    Int             @map("user_id")
+  user      User            @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  quantity  Int
+  price     Int
+  orderId   Int?     @map("order_id")
+  productId Int      @map("product_id")
+  order     Order?   @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("Order_item")
+}
+
+enum EnumOrderStatus {
+  AWAITING_COMFIRMARION
+  COMFIRMARION
+  MAKING_AN_ORDER
+  ORDER_IS_READY
+  DELIVERED
+  ORDER_COMPLETED
+}
